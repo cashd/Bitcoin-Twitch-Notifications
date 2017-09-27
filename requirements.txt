@@ -1,0 +1,7 @@
+bitcoin==1.1.39
+blockcypher==1.0.72
+peewee==2.10.1
+python-dateutil==2.2
+requests==2.4.3
+six==1.11.0
+tornado==4.5.2
