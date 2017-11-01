@@ -1,5 +1,6 @@
 import tornado.ioloop
 import tornado.web
+import request
 import settings
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -30,6 +31,29 @@ class AuthTwitchHandler(BaseHandler):
 		except MissingArgumentError:
 			# Redirect to login page with error message
 			self.redirect("/")
+		payload = {
+		"client_id":settings.TWITCH_CLIENT_ID,
+		"client_secret": settings.TWITCH_SECRET,
+		"code": auth_code,
+		"grant_type": "authorization_code",
+		"redirect_uri":settings.TWITCH_REDIRECT_URL
+		}
+		#Aync later
+		r = request.get("https://api.twitch.tv/kraken/oauth2/token", params=payload)
+		# Check to see if request was not 404/403/etc.
+		if r.status_code == request.codes.ok:
+			#Check if user is in database
+			#If not then create user
+			self.set_secure_cookie("userid")
+
+		else:
+			# Redrect to login page with error message
+			self.redirect("/")
+			
+
+
+
+
 
 	def post(self):
 		# User is redirect from twitch to thi
