@@ -2,3 +2,10 @@ env
 env/
 __pycache__
 settings.py
+.xml
+.idea/*
+*.db
+idea/*
+*.iml
+
+
