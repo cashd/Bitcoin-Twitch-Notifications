@@ -82,9 +82,6 @@ class LoginHandler(BaseHandler):
         else:
             self.redirect("/")
 
-    def post(self):
-        if self.get_current_user() is None:
-
 
 
 
@@ -95,7 +92,7 @@ def make_app():
         (r'/', MainHandler),
         (r'/login/', LoginHandler),
         (r'/logout', LogoutHandler),
-            (r'/twitch/auth/', )
+        (r'/twitch/auth/', AuthTwitchHandler)
         ], settings = {
             "template_path": settings.TEMPLATE_PATH,
             "static_path": settings.STATIC_PATH,
