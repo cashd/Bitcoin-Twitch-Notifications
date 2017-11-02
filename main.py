@@ -6,6 +6,8 @@ import uuid
 from random import randint
 from models import User
 
+
+
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         if self.get_secure_cookie('user_uuid') is not None:
