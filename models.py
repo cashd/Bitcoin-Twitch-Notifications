@@ -7,7 +7,7 @@ class Base(Model):
 		database = db
 
 class User(Base):
-	uuid = IntegerField()
+	uuid = CharField()
 	hash_id = IntegerField()
 	email = CharField()
 	twitch_id = CharField()

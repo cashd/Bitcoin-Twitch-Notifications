@@ -1,8 +1,8 @@
 import tornado.ioloop
 import tornado.web
 import requests
-import settings
-import uuid
+from settings import *
+from uuid import uuid4
 from random import randint
 from models import User
 
@@ -34,35 +34,31 @@ class AuthTwitchHandler(BaseHandler):
             auth_code = self.get_argument("code")
         except tornado.web.MissingArgumentError:
             # Redirect to login page with error message
-            self.redirect("/login/")
+            self.redirect("/")
         payload = {
-        "client_id":settings.TWITCH_CLIENT_ID,
-        "client_secret": settings.TWITCH_SECRET,
+        "client_id":TWITCH_CLIENT_ID,
+        "client_secret": TWITCH_SECRET,
         "code": auth_code,
         "grant_type": "authorization_code",
-        "redirect_uri":settings.TWITCH_REDIRECT_URL
+        "redirect_uri":TWITCH_REDIRECT_URL
         }
         #Aync later
         r = requests.post("https://api.twitch.tv/kraken/oauth2/token", params=payload)
-        # Check to see if request was not 404/403/etc.
         if r.status_code == requests.codes.ok:
             twitch_json = r.json()
             access_token = twitch_json["access_token"]
             refresh_token = twitch_json["refresh_token"]
             twitch_user = requests.get("https://api.twitch.tv/helix/users", headers={"Authorization": "Bearer {}".format(access_token)})
-            twitch_user_data = twitch_user.json()['data']
-            twitch_id = int(twitch_user_data['id'])
-            query = User.select().where(User.twitch_id == twitch_id)
+            twitch_user_data = twitch_user.json()['data'][0]
+            twitch_id = twitch_user_data['id']
             try:
                 user = User.get(User.twitch_id == twitch_id)
             except User.DoesNotExist:
-                user = User.create(uuid=uuid.uuid4(), hash_id=randint(1111,9999), email=twitch_user_data['email'], twitch_id=twitch_id, twitch_username= twitch_user_data['display_name'])
-
+                user = User.create(uuid=uuid4(), hash_id=randint(1111,9999), email=twitch_user_data['email'], twitch_id=twitch_id, twitch_username= twitch_user_data['display_name'])
             self.set_secure_cookie('user_uuid', user.uuid)
             self.set_secure_cookie('user_oauth', access_token)
             self.set_secure_cookie('user_refresh', refresh_token)
-
-            self.redirect('/')
+            self.write("Successfully made User")
         else:
             # Redrect to login page with error message
             self.redirect("/")
@@ -84,26 +80,23 @@ class LoginHandler(BaseHandler):
 
 
 
-
-
-def make_app():
-    return tornado.web.Application(
+class Application(tornado.web.Application):
+    def __init__(self):
         handlers = [
-        (r'/', MainHandler),
-        (r'/login/', LoginHandler),
-        (r'/logout', LogoutHandler),
-        (r'/twitch/auth/', AuthTwitchHandler)
-        ], settings = {
-            "template_path": settings.TEMPLATE_PATH,
-            "static_path": settings.STATIC_PATH,
-            "debug": settings.DEBUG,
-            "cookie_secret": settings.COOKIE_SECRET,
-            "login_url": settings.LOGIN_URL,
-            "xsrf_cookies": settings.XSRF_COOKIES,
+            (r'/', MainHandler),
+            (r'/login/', LoginHandler),
+            (r'/logout', LogoutHandler),
+            (r'/twitch/auth/', AuthTwitchHandler)
+        ]
+        settings = {
+            "template_path":TEMPLATE_PATH,
+            "static_path":STATIC_PATH,
+            "debug":DEBUG,
+            "cookie_secret": 'xxx',
+            "login_url": "/auth/login/"
         }
-        )
-
+        tornado.web.Application.__init__(self, handlers, **settings)
 if __name__ == "__main__":
-    app = make_app()
+    app = Application()
     app.listen(8888)
     tornado.ioloop.IOLoop.current().start()
