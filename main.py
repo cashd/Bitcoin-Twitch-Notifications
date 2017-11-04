@@ -1,32 +1,29 @@
 import tornado.ioloop
 import tornado.web
+import tornado.websocket
 import requests
 from settings import *
 from uuid import uuid4
 from random import randint
 from models import User
+from ws_handler import WebSocket_Manager
 
 
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         user_cookie = self.get_secure_cookie('user_uuid')
-        self.write(str(user_cookie))
         if user_cookie:
             oauth =  self.get_secure_cookie('user_oauth').decode('ascii')
-            self.write(str(oauth))
-            is_token_valid = requests.get("https://api.twitch.tv/kraken/", headers={'Authorization': 'OAuth {}'.format(oauth)}, params={"client_id": TWITCH_CLIENT_ID})
-            self.write(is_token_valid.text)
-        #     if is_token_valid:
-        #         return self.get_secure_cookie('user_uuid')
-        #     else:
-        #         return None
-
+            is_token_valid = requests.get("https://api.twitch.tv/kraken/", headers={'Authorization': 'OAuth {}'.format(oauth)}, params={"client_id": TWITCH_CLIENT_ID}).json()['token']['valid']
+            if is_token_valid:
+                return self.get_secure_cookie('user_uuid')
 
 
 class MainHandler(BaseHandler):
+    @tornado.web.authenticated
     def get(self):
-        self.get_current_user()
+        self.write('You can see this you are cool!')
 
 
 
@@ -82,6 +79,25 @@ class LoginHandler(BaseHandler):
             self.redirect("/")
 
 
+wm = WebSocket_Manager()
+class NotificationSocket(tornado.websocket.WebSocketHandler):
+    def open(self):
+        self.sock_id = self.get_argument('user_uuid')
+        #self.hash_id = User.get(self.sock_id == User.uuid).hash_id
+        wm.add_session(self)
+
+
+
+
+    def on_message(self, message):
+        self.write_message(message)
+
+    def on_close(self):
+        wm.remove_session(self.sock_id)
+
+
+
+
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -96,7 +112,7 @@ class Application(tornado.web.Application):
             "static_path":STATIC_PATH,
             "debug":DEBUG,
             "cookie_secret": '0TiDeqFE7CP4RettuEtmt1iOiSkeXB3V',
-            "login_url": "/auth/login/"
+            "login_url": "/login/"
         }
         tornado.web.Application.__init__(self, handlers, **settings)
 if __name__ == "__main__":
