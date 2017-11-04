@@ -11,9 +11,11 @@ from models import User
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
         user_cookie = self.get_secure_cookie('user_uuid')
+        self.write(str(user_cookie))
         if user_cookie:
-            oauth =  self.get_secure_cookie('user_oauth')
-            is_token_valid = requests.get("https://api.twitch.tv/helix", headers={'Authorization': 'Bearer {}'.format(oauth) }).json()['token']['valid']
+            oauth =  self.get_secure_cookie('user_oauth').decode('ascii')
+            self.write(str(oauth))
+            is_token_valid = requests.get("https://api.twitch.tv/kraken/", headers={'Authorization': 'OAuth {}'.format(oauth)}, params={"client_id": TWITCH_CLIENT_ID})
             self.write(is_token_valid.text)
         #     if is_token_valid:
         #         return self.get_secure_cookie('user_uuid')
@@ -25,7 +27,6 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
     def get(self):
         self.get_current_user()
-        self.write("Hello, world")
 
 
 
