@@ -10,19 +10,21 @@ from models import User
 
 class BaseHandler(tornado.web.RequestHandler):
     def get_current_user(self):
-        if self.get_secure_cookie('user_uuid') is not None:
+        user_cookie = self.get_secure_cookie('user_uuid')
+        if user_cookie:
             oauth =  self.get_secure_cookie('user_oauth')
             is_token_valid = requests.get("https://api.twitch.tv/helix", headers={'Authorization': 'Bearer {}'.format(oauth) }).json()['token']['valid']
-            if is_token_valid:
-                return User.get(User.uuid == self.get_secure_cookie('user_uuid'))
-            else:
-                return None
-
+            self.write(is_token_valid.text)
+        #     if is_token_valid:
+        #         return self.get_secure_cookie('user_uuid')
+        #     else:
+        #         return None
 
 
 
 class MainHandler(BaseHandler):
     def get(self):
+        self.get_current_user()
         self.write("Hello, world")
 
 
@@ -92,7 +94,7 @@ class Application(tornado.web.Application):
             "template_path":TEMPLATE_PATH,
             "static_path":STATIC_PATH,
             "debug":DEBUG,
-            "cookie_secret": 'xxx',
+            "cookie_secret": '0TiDeqFE7CP4RettuEtmt1iOiSkeXB3V',
             "login_url": "/auth/login/"
         }
         tornado.web.Application.__init__(self, handlers, **settings)
