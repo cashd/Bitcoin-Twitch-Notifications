@@ -79,10 +79,17 @@ class LoginHandler(BaseHandler):
             self.redirect("/")
 
 
+class NotificationHandler(BaseHandler):
+    def get(self):
+        self.render('ws_example.html')
+
+
 wm = WebSocket_Manager()
 class NotificationSocket(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
     def open(self):
-        self.sock_id = self.get_argument('user_uuid')
+        self.sock_id = 'Cashvw'
         #self.hash_id = User.get(self.sock_id == User.uuid).hash_id
         wm.add_session(self)
 
@@ -95,6 +102,14 @@ class NotificationSocket(tornado.websocket.WebSocketHandler):
     def on_close(self):
         wm.remove_session(self.sock_id)
 
+class BitcoinWebhook(BaseHandler):
+    #Make post later
+    def get(self):
+        x = self.get_argument('id')
+        self.write(x)
+        ws = wm.find_session(str(x))
+        ws.write_message('You received a new donation!')
+
 
 
 
@@ -105,7 +120,10 @@ class Application(tornado.web.Application):
             (r'/', MainHandler),
             (r'/login/', LoginHandler),
             (r'/logout', LogoutHandler),
-            (r'/twitch/auth/', AuthTwitchHandler)
+            (r'/twitch/auth/', AuthTwitchHandler),
+            (r'\/\d', NotificationHandler),
+            (r'/ws/', NotificationSocket),
+            (r'/btc/', BitcoinWebhook),
         ]
         settings = {
             "template_path":TEMPLATE_PATH,
