@@ -23,7 +23,8 @@ class BaseHandler(tornado.web.RequestHandler):
 class MainHandler(BaseHandler):
     @tornado.web.authenticated
     def get(self):
-        self.write('You can see this you are cool!')
+        self.set_cookie('x','44', domain='127.0.0.1')
+        self.write(str(self.request.cookies))
 
 
 
@@ -55,7 +56,7 @@ class AuthTwitchHandler(BaseHandler):
                 user = User.get(User.twitch_id == twitch_id)
             except User.DoesNotExist:
                 user = User.create(uuid=uuid4(), hash_id=randint(1111,9999), email=twitch_user_data['email'], twitch_id=twitch_id, twitch_username= twitch_user_data['display_name'])
-            self.set_secure_cookie('user_uuid', user.uuid)
+            self.set_secure_cookie('user_uuid', user.uuid, domain='127.0.0.1')
             self.set_secure_cookie('user_oauth', access_token)
             self.set_secure_cookie('user_refresh', refresh_token)
             self.write("Successfully made User")
@@ -89,7 +90,8 @@ class NotificationSocket(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
     def open(self):
-        self.sock_id = 'Cashvw'
+        self.sock_id = '1122'
+        self.write_message(str(self.request.cookies))
         #self.hash_id = User.get(self.sock_id == User.uuid).hash_id
         wm.add_session(self)
 

@@ -12,7 +12,7 @@ class User(Base):
 	email = CharField()
 	twitch_id = CharField()
 	twitch_username = CharField()
-	#btc_address = CharField()
+	btc_address = CharField(default="")
 	#twitch_profile_picture = CharField()
 	#profile_bio = CharField()
 
