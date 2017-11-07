@@ -57,6 +57,7 @@ class AuthTwitchHandler(BaseHandler):
             except User.DoesNotExist:
                 user = User.create(uuid=uuid4(), hash_id=randint(1111,9999), email=twitch_user_data['email'], twitch_id=twitch_id, twitch_username= twitch_user_data['display_name'])
             self.set_secure_cookie('user_uuid', user.uuid, domain='127.0.0.1')
+            self.set_secure_cookie('user_twitch_id', twitch_id, domain='127.0.0.1')
             self.set_secure_cookie('user_oauth', access_token)
             self.set_secure_cookie('user_refresh', refresh_token)
             self.write("Successfully made User")
@@ -90,13 +91,9 @@ class NotificationSocket(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
     def open(self):
-        self.sock_id = '1122'
-        self.write_message(str(self.request.cookies))
-        #self.hash_id = User.get(self.sock_id == User.uuid).hash_id
+        self.write_message(self.get_secure_cookie('user_twitch_id'))
+        self.sock_id = self.get_secure_cookie('user_twitch_id').decode('ascii')
         wm.add_session(self)
-
-
-
 
     def on_message(self, message):
         self.write_message(message)
@@ -107,9 +104,7 @@ class NotificationSocket(tornado.websocket.WebSocketHandler):
 class BitcoinWebhook(BaseHandler):
     #Make post later
     def get(self):
-        x = self.get_argument('id')
-        self.write(x)
-        ws = wm.find_session(str(x))
+        ws = wm.find_session(self.get_argument('id'))
         ws.write_message('You received a new donation!')
 
 
