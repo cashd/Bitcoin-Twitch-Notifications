@@ -56,10 +56,10 @@ class AuthTwitchHandler(BaseHandler):
                 user = User.get(User.twitch_id == twitch_id)
             except User.DoesNotExist:
                 user = User.create(uuid=uuid4(), hash_id=randint(1111,9999), email=twitch_user_data['email'], twitch_id=twitch_id, twitch_username= twitch_user_data['display_name'])
-            self.set_secure_cookie('user_uuid', user.uuid, domain='127.0.0.1')
-            self.set_secure_cookie('user_twitch_id', twitch_id, domain='127.0.0.1')
-            self.set_secure_cookie('user_oauth', access_token)
-            self.set_secure_cookie('user_refresh', refresh_token)
+            self.set_secure_cookie('user_uuid', bytes(user.uuid, 'ascii'), domain='127.0.0.1')
+            self.set_secure_cookie('user_twitch_id', bytes(twitch_id, 'ascii'), domain='127.0.0.1')
+            self.set_secure_cookie('user_oauth', bytes(access_token, 'ascii'))
+            self.set_secure_cookie('user_refresh', bytes(refresh_token, 'ascii'))
             self.write("Successfully made User")
         else:
             # Redrect to login page with error message
